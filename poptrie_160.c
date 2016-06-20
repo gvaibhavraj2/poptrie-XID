@@ -299,7 +299,7 @@ poptrie160_route_add(struct poptrie160 *poptrie, XID prefix, int len,
 /*
  * Change a route
  */
- #if 0
+ 
 int
 poptrie160_route_change(struct poptrie160 *poptrie, XID prefix, int len,
                      void *nexthop)
@@ -321,7 +321,7 @@ poptrie160_route_change(struct poptrie160 *poptrie, XID prefix, int len,
 
     return _route_change(poptrie, &poptrie->radix, prefix, len, n, 0);
 }
-#endif
+
 /*
  * Update a route (add if not exists like BGP update)
  */
@@ -863,7 +863,7 @@ _update_subtree(struct poptrie160 *poptrie, struct radix_node160 *node,
                 XID prefix, int depth)
 {
     int ret;
-    struct poptrie_stack stack[128 / 6 + 1];
+    struct poptrie_stack stack[160 / 6 + 1];
     struct radix_node160 *ntnode;
     int idx;
     int i;
@@ -1381,7 +1381,7 @@ _update_dp2(struct poptrie160 *poptrie, struct radix_node160 *tnode, int alt,
     int i;
     int idx;
     int ret;
-    struct poptrie_stack stack[128 / 6 + 1];
+    struct poptrie_stack stack[160 / 6 + 1];
 
     if ( depth == POPTRIE_S ) {
         idx = INDEX(prefix, 0, POPTRIE_S);
@@ -1797,7 +1797,7 @@ _route_add_propagate(struct radix_node160 *node, struct radix_node160 *ext)
 /*
  * Change a route
  */
-#if 0 
+
 static int
 _route_change(struct poptrie160 *poptrie, struct radix_node160 **node,
               XID prefix, int len, poptrie_leaf_t nexthop, int depth)
@@ -1824,18 +1824,31 @@ _route_change(struct poptrie160 *poptrie, struct radix_node160 **node,
 
         return 0;
     } else {
-        if ( (prefix >> (128 - depth - 1)) & 1 ) {
-            /* Right */
-            return _route_change(poptrie, &((*node)->right), prefix, len,
+        int temp = 160-depth-1;
+        if(temp<128){
+            if(prefix.prefix2 >> (temp) & 1){
+                return _route_change(poptrie, &((*node)->right), prefix, len,
                                  nexthop, depth + 1);
-        } else {
-            /* Left */
-            return _route_change(poptrie, &((*node)->left), prefix, len,
+            }
+            else{
+                return _route_change(poptrie, &((*node)->left), prefix, len,
                                  nexthop, depth + 1);
+            }    
         }
+        else{
+            if(prefix.prefix1 >> (temp-160) & 1){
+                return _route_change(poptrie, &((*node)->right), prefix, len,
+                                 nexthop, depth + 1);
+            }
+            else{
+                return _route_change(poptrie, &((*node)->left), prefix, len,
+                                 nexthop, depth + 1);
+            }    
+        }    
+       
     }
 }
-#endif
+
 static int
 _route_change_propagate(struct radix_node160 *node, struct radix_node160 *ext)
 {
