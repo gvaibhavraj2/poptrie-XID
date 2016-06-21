@@ -7,7 +7,6 @@
 #define _POPTRIE_H
 
 #include <stdint.h>
-//#include "uint256.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -15,17 +14,11 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 
-//#define uint160 uint8_t [20]
 #define POPTRIE_S               18
 #define POPTRIE_INIT_FIB_SIZE   4096
 
 #define popcnt(v)               __builtin_popcountll(v)
 
-
-typedef struct uint160_t{
-    uint32_t prefix1;
-    __uint128_t prefix2;
-}XID;
 
 /* Internal node */
 typedef struct poptrie_node {
@@ -79,25 +72,6 @@ struct radix_node6 {
 };
 
 /*
- * Radix tree node for XID's
- */
-struct radix_node160 {
-    int valid;
-    struct radix_node160 *left;
-    struct radix_node160 *right;
-
-    /* Next hop */
-    XID prefix;
-    int len;
-    poptrie_leaf_t nexthop;
-
-    /* Propagated route */
-    struct radix_node160 *ext;
-
-    /* Mark for update */
-    int mark;
-};
-/*
  * FIB mapping table
  */
 struct poptrie_fib {
@@ -125,6 +99,10 @@ struct poptrie {
     /* Size */
     int nodesz;
     int leafsz;
+
+    /* Last allocated indices. */
+    u32 last_base0;
+    u32 last_base1;
 
     /* Direct pointing */
     u32 *dir;
@@ -168,35 +146,6 @@ struct poptrie6 {
     int _allocated;
 };
 
-struct poptrie160 {
-    /* Root */
-    u32 root;
-
-    /* FIB */
-    struct poptrie_fib fib;
-
-    /* Memory management */
-    poptrie_node_t *nodes;
-    poptrie_leaf_t *leaves;
-    void *cnodes;
-    void *cleaves;
-
-    /* Size */
-    int nodesz;
-    int leafsz;
-
-    /* Direct pointing */
-    u32 *dir;
-    u32 *altdir;
-
-    /* RIB */
-    struct radix_node160 *radix;
-
-    /* Control */
-    int _allocated;
-};
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -221,15 +170,6 @@ extern "C" {
     void * poptrie6_lookup(struct poptrie6 *, __uint128_t);
     void * poptrie6_rib_lookup(struct poptrie6 *, __uint128_t);
 
-    /* in poptrie160.c */
-    struct poptrie160 * poptrie160_init(struct poptrie160 *, int, int);
-    void poptrie160_release(struct poptrie160 *);
-    int poptrie160_route_add(struct poptrie160 *, XID, int, void *);
-    int poptrie160_route_change(struct poptrie160 *, XID, int, void *);
-    int poptrie160_route_update(struct poptrie160 *, XID, int, void *);
-    int poptrie160_route_del(struct poptrie160 *, XID, int);
-    void * poptrie160_lookup(struct poptrie160 *, XID);
-    void * poptrie160_rib_lookup(struct poptrie160 *, XID);
 #ifdef __cplusplus
 }
 #endif
