@@ -34,10 +34,10 @@
 static int
 test_init(void)
 {
-    struct poptrie160 *poptrie;
+    struct poptrie *poptrie;
 
     /* Initialize */
-    poptrie = poptrie160_init(NULL, 19, 22);
+    poptrie = poptrie_init(NULL, 19, 22);
     if ( NULL == poptrie ) {
         return -1;
     }
@@ -45,7 +45,7 @@ test_init(void)
     TEST_PROGRESS();
 
     /* Release */
-    poptrie160_release(poptrie);
+    poptrie_release(poptrie);
 
     return 0;
 }
@@ -53,68 +53,63 @@ test_init(void)
 static int
 test_lookup(void)
 {
-    struct poptrie160 *poptrie;
+    struct poptrie *poptrie;
     int ret;
     void *nexthop;
-    XID addr;
-    addr.prefix1 = (u32)0;
-    addr.prefix2 = 0x1c001203;
+
     /* Initialize */
-    poptrie = poptrie160_init(NULL, 19, 22);
+    poptrie = poptrie_init(NULL, 19, 22);
     if ( NULL == poptrie ) {
         return -1;
     }
-
+   
     /* No route must be found */
-    if ( NULL != poptrie160_lookup(poptrie,addr) ) {
+    if ( NULL != poptrie_lookup(poptrie, 0x1c001203) ) {
         return -1;
     }
-    
-    XID addr1;
-    addr1.prefix1 = (u32)0;
-    addr1.prefix2 = 0x1c001200;
+
     /* Route add */
     nexthop = (void *)1234;
-    ret = poptrie160_route_add(poptrie, addr1, 128, nexthop);
+    ret = poptrie_route_add(poptrie, 0x1c001200, 24, nexthop);
     if ( ret < 0 ) {
         /* Failed to add */
         return -1;
     }
-    if ( nexthop != poptrie160_lookup(poptrie, addr) ) {
-        printf("not correct");
+
+    if ( nexthop != poptrie_lookup(poptrie, 0x1c001203) ) {
         return -1;
     }
-
     TEST_PROGRESS();
-    
+
+
     /* Route update */
     nexthop = (void *)5678;
-    ret = poptrie160_route_update(poptrie, addr1, 128, nexthop);
+    ret = poptrie_route_update(poptrie, 0x1c001200, 24, nexthop);
     if ( ret < 0 ) {
         /* Failed to update */
         return -1;
     }
-    if ( nexthop != poptrie160_lookup(poptrie, addr) ) {
+    if ( nexthop != poptrie_lookup(poptrie, 0x1c001203) ) {
         return -1;
     }
     TEST_PROGRESS();
-   
+
     /* Route delete */
-    ret = poptrie160_route_del(poptrie, addr1, 128);
+    printf("deln");
+    ret = poptrie_route_del(poptrie, 0x1c001200, 24);
     if ( ret < 0 ) {
         /* Failed to update */
         return -1;
     }
-    if ( NULL != poptrie160_lookup(poptrie, addr) ) {
+    if ( NULL != poptrie_lookup(poptrie, 0x1c001203) ) {
         return -1;
     }
     TEST_PROGRESS();
 
     /* Release */
-    poptrie160_release(poptrie);
+    poptrie_release(poptrie);
 
     return 0;
-   
 }
 
 static int
@@ -327,7 +322,7 @@ main(int argc, const char *const argv[])
 
     /* Run tests */
     TEST_FUNC("init", test_init, ret);
-     TEST_FUNC("lookup", test_lookup, ret);
+    TEST_FUNC("lookup", test_lookup, ret);
     TEST_FUNC("lookup_fullroute", test_lookup_linx, ret);
     TEST_FUNC("lookup_fullroute_update", test_lookup_linx_update, ret);
 
